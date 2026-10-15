@@ -1,6 +1,7 @@
+
 # CivicAI — AI-Powered Civic Issue Management Platform
 
-> **"Smarter Reports. Safer Communities."**  
+> **"Smarter Reports. Safer Communities."**
 > *Developed for the VORTEX 2K26 Global AI Innovation Hackathon.*
 
 ---
@@ -10,6 +11,7 @@
 CivicAI is a full-stack, AI-powered smart-city platform designed to resolve urban infrastructure challenges (potholes, water leaks, damaged streetlights, sewer blockages, and hazardous debris).
 
 Unlike fragmented complaint hotlines or static submission forms, CivicAI features:
+
 1. **Instant AI Severity & Category Triage**: Automatically estimates complaint urgency (`Critical`, `High`, `Medium`, `Low`) with auditable rationale and routes tasks to the appropriate municipal department.
 2. **Geospatial & Textual Duplicate Detection**: Uses Haversine distance and token-based similarity to identify suspected duplicate reports within a 1km radius, saving field crews from duplicate dispatches.
 3. **Interactive Hotspot GIS Mapping**: OpenStreetMap integration with real-time priority markers, cluster radiuses, and category filters.
@@ -43,6 +45,7 @@ CivicAI Platform
 ## 🚀 Quick Start Guide (Windows 11 & VS Code)
 
 ### Prerequisites
+
 - **Python 3.11+** (Tested on Python 3.13)
 - **Node.js v18+** (Tested on Node.js v24 & npm 11)
 - **Git** (optional)
@@ -50,7 +53,9 @@ CivicAI Platform
 ---
 
 ### Step 1: Open Workspace Directory
+
 Open PowerShell or your preferred terminal inside the project root:
+
 ```powershell
 cd C:\Users\ACER\.gemini\antigravity-ide\scratch\civicai
 ```
@@ -60,28 +65,31 @@ cd C:\Users\ACER\.gemini\antigravity-ide\scratch\civicai
 ### Step 2: Setup & Launch Backend
 
 1. Navigate to the `backend` folder:
+
    ```powershell
    cd backend
    ```
-
 2. Activate the virtual environment (created during setup):
+
    ```powershell
    # In Windows PowerShell:
    .\venv\Scripts\Activate.ps1
    # Or directly run through venv python:
    .\venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
    ```
-
 3. Initialize and Seed the Database with Fictional Complaints:
+
    ```powershell
    .\venv\Scripts\python.exe ..\scripts\seed_data.py
    ```
-   *(Inserts 1 Administrator, 2 Citizens, 16 realistic civic complaints across all categories, duplicate pairs, and status histories).*
 
+   *(Inserts 1 Administrator, 2 Citizens, 16 realistic civic complaints across all categories, duplicate pairs, and status histories).*
 4. Start the FastAPI Development Server:
+
    ```powershell
    .\venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
    ```
+
    - **Backend API:** `http://127.0.0.1:8000`
    - **Interactive Swagger Docs:** `http://127.0.0.1:8000/docs`
    - **Health Check:** `http://127.0.0.1:8000/api/health`
@@ -91,19 +99,21 @@ cd C:\Users\ACER\.gemini\antigravity-ide\scratch\civicai
 ### Step 3: Setup & Launch Frontend (In a Second Terminal)
 
 1. Open a new terminal tab and navigate to `frontend`:
+
    ```powershell
    cd C:\Users\ACER\.gemini\antigravity-ide\scratch\civicai\frontend
    ```
-
 2. Install dependencies (if not already cached):
+
    ```powershell
    npm install
    ```
-
 3. Launch the Vite Development Server:
+
    ```powershell
    npm run dev
    ```
+
    - **Web Application URL:** `http://localhost:5173`
 
 ---
@@ -112,11 +122,11 @@ cd C:\Users\ACER\.gemini\antigravity-ide\scratch\civicai
 
 Both the **Landing Page** (`/`) and **Sign In Page** (`/login`) include **1-Click Instant Demo Login Buttons** for instant evaluation without typing:
 
-| Role | Name | Email | Password | Pre-Assigned Permissions |
-| :--- | :--- | :--- | :--- | :--- |
-| **Chief Administrator** | Sarah Jenkins | `admin@civicai.org` | `AdminPassword123!` | Executive overview, manage all complaints, override priorities, reassign departments, review duplicates |
-| **Citizen Reporter** | Alex Rivera | `citizen.alex@civicai.org` | `CitizenPassword123!` | File reports, track personal complaints, view GIS map, comment on issues |
-| **Citizen Reporter** | Maya Chen | `citizen.maya@civicai.org` | `CitizenPassword123!` | File reports, track personal complaints, view GIS map, comment on issues |
+| Role                          | Name          | Email                        | Password                | Pre-Assigned Permissions                                                                                |
+| :---------------------------- | :------------ | :--------------------------- | :---------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Chief Administrator** | Sarah Jenkins | `admin@civicai.org`        | `AdminPassword123!`   | Executive overview, manage all complaints, override priorities, reassign departments, review duplicates |
+| **Citizen Reporter**    | Alex Rivera   | `citizen.alex@civicai.org` | `CitizenPassword123!` | File reports, track personal complaints, view GIS map, comment on issues                                |
+| **Citizen Reporter**    | Maya Chen     | `citizen.maya@civicai.org` | `CitizenPassword123!` | File reports, track personal complaints, view GIS map, comment on issues                                |
 
 > ⚠️ *Note: These credentials are strictly development seeds. Do not use in production.*
 
@@ -132,6 +142,7 @@ cd backend
 ```
 
 **Test Results:**
+
 ```
 tests/test_admin.py::test_admin_endpoints_forbidden_for_citizen PASSED   [  6%]
 tests/test_admin.py::test_admin_overview_and_analytics PASSED            [ 12%]
@@ -159,15 +170,19 @@ tests/test_issues.py::test_public_map_endpoint PASSED                    [100%]
 CivicAI implements a dual-mode AI architecture:
 
 ### 1. Deterministic Local Fallback (Default - Zero API Key Needed)
+
 - Analyzes title and description against high-risk civic keywords (e.g. "open manhole", "sparking wire", "burst pipe").
 - Automatically predicts category, maps the responsible municipal department, and calculates an urgency rating (`Critical`, `High`, `Medium`, `Low`).
 - Supplies an auditable natural language explanation to aid human administrators.
 
 ### 2. Google Gemini API Integration (Optional)
+
 If you have a Gemini API key, configure it in `backend/.env`:
+
 ```env
 GEMINI_API_KEY="your-gemini-api-key-here"
 ```
+
 The platform automatically switches to Gemini 2.5 Flash for natural language reasoning while maintaining automatic fallback if the network or API key fails.
 
 ---
@@ -191,6 +206,7 @@ The platform automatically switches to Gemini 2.5 Flash for natural language rea
 ## 🚢 Production Deployment Guide
 
 ### Backend (Render, Railway, or Docker)
+
 1. Set the following environment variables on your backend host:
    - `DATABASE_URL`: Your PostgreSQL / Supabase connection string.
    - `SECRET_KEY`: A secure random 64-character string.
@@ -201,6 +217,7 @@ The platform automatically switches to Gemini 2.5 Flash for natural language rea
    ```
 
 ### Frontend (Vercel or Netlify)
+
 1. Build command: `npm run build`
 2. Output directory: `dist`
 3. Environment variables:
@@ -221,3 +238,13 @@ The platform automatically switches to Gemini 2.5 Flash for natural language rea
   ```
 - **Leaflet Map Tiles Not Loading:**
   CivicAI uses standard OpenStreetMap tiles (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`) requiring standard internet connectivity.
+
+# CivicAI
+
+>>>>>>> 20e4741cf12311970c12351b753191f956b66eab
+>>>>>>>
+>>>>>>
+>>>>>
+>>>>
+>>>
+>>
