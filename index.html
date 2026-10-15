@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CivicAI — AI-Powered Civic Issue Detection & Resolution</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ================= AUTHENTICATION / LOGIN VIEW ================= -->
+  <div id="login-view" class="auth-screen">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo">
+          <i data-lucide="shield-check" class="auth-logo-icon"></i>
+          <span>CivicAI</span>
+        </div>
+        <p class="auth-motto">Smarter Reports. Safer Communities.</p>
+        <span class="vortex-badge">VORTEX 2K26 Global AI Hackathon</span>
+      </div>
+
+      <!-- Quick Role Selection Shortcuts for Judges -->
+      <div class="role-selector-box">
+        <span class="role-selector-title">Quick Demo Login (Judge Presets)</span>
+        <div class="role-grid">
+          <button type="button" class="btn-role" onclick="quickFillRole('citizen')">
+            <i data-lucide="user"></i>
+            <div>
+              <strong>Citizen Portal</strong>
+              <small>Report & Track</small>
+            </div>
+          </button>
+          <button type="button" class="btn-role" onclick="quickFillRole('admin')">
+            <i data-lucide="shield-alert"></i>
+            <div>
+              <strong>Municipal Admin</strong>
+              <small>Manage & Analyze</small>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <form id="auth-form" onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label class="form-label" for="login-email">Email or Identifier</label>
+          <input type="text" id="login-email" class="form-control" placeholder="user@city.gov or citizen@metro.org" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Access Passphrase</label>
+          <input type="password" id="login-password" class="form-control" value="••••••••" required>
+        </div>
+        <button type="submit" id="btn-login-submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
+          <i data-lucide="log-in"></i>
+          <span>Enter Platform</span>
+        </button>
+      </form>
+
+      <div class="auth-footer-notice">
+        <i data-lucide="info" style="width:14px; height:14px; flex-shrink:0;"></i>
+        <span>AI Simulation Prototype mode. Click either preset button above to test instantly.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP LAYOUT (Sidebar + Content) ================= -->
+  <div id="app-container" class="app-layout" style="display: none;">
+    
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-container">
+        <div class="brand-logo">
+          <i data-lucide="shield-check"></i>
+          <span>CivicAI</span>
+        </div>
+        <div class="brand-subtitle">VORTEX 2K26 Edition</div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" onclick="switchView('overview')">
+          <i data-lucide="layout-dashboard"></i>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" onclick="switchView('report')">
+          <i data-lucide="file-plus"></i>
+          <span>Report an Issue</span>
+        </button>
+        <button class="nav-item" onclick="switchView('complaints')">
+          <i data-lucide="inbox"></i>
+          <span>All Complaints</span>
+        </button>
+        <button class="nav-item" onclick="switchView('map')">
+          <i data-lucide="map-pin"></i>
+          <span>Community Map</span>
+        </button>
+        <button class="nav-item" onclick="switchView('analytics')">
+          <i data-lucide="bar-chart-3"></i>
+          <span>Admin Analytics</span>
+        </button>
+        <button class="nav-item" onclick="switchView('assistant')">
+          <i data-lucide="bot"></i>
+          <span>AI Assistant</span>
+        </button>
+        <button class="nav-item" onclick="switchView('settings')">
+          <i data-lucide="settings"></i>
+          <span>Demo Settings</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer / Active Session -->
+      <div class="sidebar-footer">
+        <div class="user-chip">
+          <div class="avatar" id="sidebar-avatar">JD</div>
+          <div class="user-info">
+            <span class="user-name" id="sidebar-user-name">Jane Doe</span>
+            <span class="user-role" id="sidebar-user-role">Resident Contributor</span>
+          </div>
+          <button class="btn-icon" title="Sign out" onclick="handleLogout()" style="color: var(--text-dim); margin-left: auto;">
+            <i data-lucide="log-out"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Top Header Bar -->
+      <header class="top-nav">
+        <div class="top-nav-left">
+          <button class="btn-icon mobile-menu-btn" onclick="toggleSidebar()">
+            <i data-lucide="menu"></i>
+          </button>
+          <div>
+            <h1 class="page-title" id="page-title">City Operations Overview</h1>
+            <p class="page-subtitle" id="page-subtitle">Real-time civic intelligence and resolution pipeline</p>
+          </div>
+        </div>
+
+        <div class="top-nav-right">
+          <div class="role-switch-container">
+            <span class="role-switch-label">Role:</span>
+            <button class="role-switch-btn active" id="btn-role-citizen" onclick="setRole('citizen')">Citizen</button>
+            <button class="role-switch-btn" id="btn-role-admin" onclick="setRole('admin')">Admin</button>
+          </div>
+          
+          <button class="btn btn-primary" onclick="switchView('report')">
+            <i data-lucide="plus-circle"></i>
+            <span>Report Issue</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: Overview Dashboard -->
+      <div id="view-overview" class="view-panel active">
+        <!-- Stats Grid -->
+        <div class="grid-4 mb-4">
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Total Reported</span>
+              <div class="stat-icon-wrapper text-blue">
+                <i data-lucide="layers"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-total">0</div>
+            <span class="stat-meta">Lifetime logged incidents</span>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Pending Review</span>
+              <div class="stat-icon-wrapper text-amber">
+                <i data-lucide="clock"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-pending">0</div>
+            <span class="stat-meta">Requires triage</span>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">High / Critical</span>
+              <div class="stat-icon-wrapper text-red">
+                <i data-lucide="alert-triangle"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-high">0</div>
+            <span class="stat-meta">Immediate danger alerts</span>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-header">
+              <span class="stat-label">Resolved Issues</span>
+              <div class="stat-icon-wrapper text-green">
+                <i data-lucide="check-circle-2"></i>
+              </div>
+            </div>
+            <div class="stat-value" id="stat-resolved">0</div>
+            <span class="stat-meta">Public verified fixes</span>
+          </div>
+        </div>
+
+        <!-- Dashboard Charts & Feeds -->
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Complaints by Category</h2>
+              <span class="badge badge-subtle">AI Distributed</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="overviewCategoryChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Resolution Status Breakdown</h2>
+              <span class="badge badge-subtle">Real-time</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="overviewStatusChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Complaints Table Preview -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Recent Civic Complaints</h2>
+              <p class="text-sm text-dim">Latest submissions processed by CivicAI engine</p>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="switchView('complaints')">View All</button>
+          </div>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Issue Title</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Reported</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="overview-complaints-tbody">
+                <!-- Dynamically injected -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: Report an Issue -->
+      <div id="view-report" class="view-panel">
+        <div class="grid-2">
+          <!-- Form Left -->
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-title">Submit Civic Report</h2>
+                <p class="text-sm text-dim">Our simulated AI automatically predicts triage priority & responsible dept.</p>
+              </div>
+              <span class="badge badge-ai"><i data-lucide="sparkles" style="width:12px;height:12px;"></i> AI Assisted</span>
+            </div>
+
+            <form id="report-form" onsubmit="handleReportSubmit(event)">
+              <div class="form-group">
+                <label class="form-label" for="report-title">Issue Title *</label>
+                <input type="text" id="report-title" class="form-control" placeholder="e.g., Deep pothole causing vehicle axle damage" required oninput="triggerAiPrediction()">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="report-desc">Detailed Description *</label>
+                <textarea id="report-desc" class="form-control" rows="4" placeholder="Describe the severity, exact location landmarks, and immediate hazards..." required oninput="triggerAiPrediction()"></textarea>
+              </div>
+
+              <div class="grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="report-category">Category</label>
+                  <select id="report-category" class="form-control">
+                    <option value="Roads & Public Works">Roads & Public Works</option>
+                    <option value="Sanitation">Sanitation</option>
+                    <option value="Water Department">Water Department</option>
+                    <option value="Electricity Department">Electricity Department</option>
+                    <option value="Drainage & Flooding">Drainage & Flooding</option>
+                    <option value="Public Safety">Public Safety</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="report-location">Location Address *</label>
+                  <input type="text" id="report-location" class="form-control" placeholder="e.g., 4th Cross, Elmwood Avenue" required>
+                </div>
+              </div>
+
+              <!-- Media Attachment -->
+              <div class="form-group">
+                <label class="form-label">Photo Evidence</label>
+                <div class="image-upload-dropzone" onclick="document.getElementById('report-photo').click()">
+                  <i data-lucide="camera" style="width: 32px; height: 32px; color: var(--electric-blue); margin-bottom: 0.5rem;"></i>
+                  <span class="text-sm font-semibold">Click to upload photo evidence</span>
+                  <span class="text-xs text-dim">Supports JPG, PNG or WEBP (Max 5MB)</span>
+                  <input type="file" id="report-photo" accept="image/*" style="display:none;" onchange="handleImagePreview(event)">
+                </div>
+                <div id="image-preview-container" class="image-preview-box" style="display:none;">
+                  <img id="image-preview-img" src="" alt="Preview">
+                  <button type="button" class="btn-preview-remove" onclick="removeImagePreview()">&times;</button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.85rem;">
+                <i data-lucide="send"></i>
+                <span>Dispatch Civic Report</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- AI Live Analysis Panel Right -->
+          <div class="card bg-ai-gradient">
+            <div class="card-header">
+              <div class="flex-align gap-2">
+                <i data-lucide="cpu" class="text-blue"></i>
+                <h2 class="card-title">Real-Time AI Prediction</h2>
+              </div>
+              <span class="badge badge-ai">Local Heuristics Engine</span>
+            </div>
+
+            <div class="ai-box mb-3">
+              <div class="text-xs uppercase text-dim tracking-wider font-semibold mb-1">Predicted Category</div>
+              <div class="ai-result-value" id="ai-pred-category">Analyzing input...</div>
+            </div>
+
+            <div class="grid-2 mb-3">
+              <div class="ai-box">
+                <div class="text-xs uppercase text-dim tracking-wider font-semibold mb-1">Assessed Priority</div>
+                <div class="ai-result-value" id="ai-pred-priority"><span class="badge badge-gray">Evaluating</span></div>
+              </div>
+              <div class="ai-box">
+                <div class="text-xs uppercase text-dim tracking-wider font-semibold mb-1">Assigned Department</div>
+                <div class="ai-result-value" id="ai-pred-dept">Triage pending</div>
+              </div>
+            </div>
+
+            <div class="ai-box mb-3">
+              <div class="text-xs uppercase text-dim tracking-wider font-semibold mb-1">AI Classification Rationale</div>
+              <p class="text-sm" id="ai-pred-explanation" style="line-height:1.5; color: var(--text-main);">
+                Type an issue title and description on the left. The engine analyzes keywords for structural safety hazards, electrical risks, sanitation breaches, or municipal department domains.
+              </p>
+            </div>
+
+            <!-- Potential Duplicate Warning Alert -->
+            <div id="duplicate-warning" class="duplicate-alert" style="display: none;">
+              <div class="flex-align gap-2 text-amber font-semibold mb-1">
+                <i data-lucide="alert-circle" style="width:16px;height:16px;"></i>
+                <span>Potential Duplicate Detected</span>
+              </div>
+              <p class="text-xs text-dim mb-2" id="duplicate-details">A matching complaint was recently filed within close proximity.</p>
+              <button class="btn btn-outline btn-sm" onclick="showDuplicateModal()">Review Existing Ticket</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: All Complaints Management -->
+      <div id="view-complaints" class="view-panel">
+        <div class="card mb-4">
+          <div class="filters-bar">
+            <div class="search-input-wrapper">
+              <i data-lucide="search"></i>
+              <input type="text" id="filter-search" class="form-control" placeholder="Search by title, location, ID..." oninput="applyFilters()">
+            </div>
+
+            <div class="filter-controls">
+              <select id="filter-category" class="form-control" onchange="applyFilters()">
+                <option value="ALL">All Categories</option>
+                <option value="Roads & Public Works">Roads & Public Works</option>
+                <option value="Sanitation">Sanitation</option>
+                <option value="Water Department">Water Department</option>
+                <option value="Electricity Department">Electricity Department</option>
+                <option value="Drainage & Flooding">Drainage & Flooding</option>
+                <option value="Public Safety">Public Safety</option>
+              </select>
+
+              <select id="filter-priority" class="form-control" onchange="applyFilters()">
+                <option value="ALL">All Priorities</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+
+              <select id="filter-status" class="form-control" onchange="applyFilters()">
+                <option value="ALL">All Statuses</option>
+                <option value="Submitted">Submitted</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Assigned">Assigned</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Tracking ID</th>
+                  <th>Title & Location</th>
+                  <th>Category</th>
+                  <th>Priority</th>
+                  <th>Department</th>
+                  <th>Status</th>
+                  <th>Reported</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="complaints-table-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+          <div id="no-records-msg" class="empty-state" style="display: none;">
+            <i data-lucide="folder-search" style="width:48px;height:48px;color:var(--text-dim);margin-bottom:0.75rem;"></i>
+            <h3>No complaints match your criteria</h3>
+            <p class="text-sm text-dim">Try clearing your filters or search keywords.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 4: Community Map -->
+      <div id="view-map" class="view-panel">
+        <div class="card mb-3">
+          <div class="flex-between flex-wrap gap-2">
+            <div>
+              <h2 class="card-title">Geospatial Incident Map</h2>
+              <p class="text-sm text-dim">Leaflet OpenStreetMap integration with severity priority markers</p>
+            </div>
+            <div class="flex-align gap-2">
+              <span class="map-legend-item"><span class="legend-dot bg-red"></span> Critical</span>
+              <span class="map-legend-item"><span class="legend-dot bg-amber"></span> High</span>
+              <span class="map-legend-item"><span class="legend-dot bg-blue"></span> Medium</span>
+              <span class="map-legend-item"><span class="legend-dot bg-gray"></span> Low</span>
+            </div>
+          </div>
+        </div>
+        <div class="card p-0 overflow-hidden" style="position:relative;">
+          <div id="map-container" style="height: 600px; width: 100%;"></div>
+          <div id="map-fallback" class="map-fallback-view" style="display:none;">
+            <i data-lucide="wifi-off" style="width:48px;height:48px;color:var(--amber);"></i>
+            <h3>Interactive Map Tiles Offline</h3>
+            <p class="text-sm text-dim">Demonstration mode active. Showing simulated coordinate telemetry.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 5: Admin Analytics -->
+      <div id="view-analytics" class="view-panel">
+        <!-- AI Insights Strip -->
+        <div class="card bg-ai-gradient mb-4">
+          <div class="flex-align gap-2 mb-2">
+            <i data-lucide="sparkles" class="text-blue"></i>
+            <h2 class="card-title">CivicAI Autonomous Intelligence Insights</h2>
+          </div>
+          <div class="grid-3" id="ai-insights-container">
+            <!-- Dynamically populated insights -->
+          </div>
+        </div>
+
+        <div class="grid-2 mb-4">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Department Workload Distribution</h3>
+              <span class="badge badge-subtle">Active Tickets</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="deptWorkloadChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Severity Priority Ratio</h3>
+              <span class="badge badge-subtle">SLA Impact</span>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="priorityRatioChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">Resolution Performance by Department</h3>
+            <span class="badge badge-subtle">Resolved vs Total</span>
+          </div>
+          <div class="chart-wrapper" style="height: 280px;">
+            <canvas id="resolutionRateChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 6: AI Chat Assistant -->
+      <div id="view-assistant" class="view-panel">
+        <div class="card chat-card">
+          <div class="chat-header">
+            <div class="flex-align gap-3">
+              <div class="chat-bot-avatar">
+                <i data-lucide="bot"></i>
+              </div>
+              <div>
+                <h3 class="font-bold">CivicAI Assistant</h3>
+                <span class="text-xs text-blue flex-align gap-1">
+                  <span class="pulse-indicator"></span> AI Demo Mode Active • Context Aware
+                </span>
+              </div>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="clearChat()">Clear History</button>
+          </div>
+
+          <div class="chat-messages" id="chat-messages">
+            <div class="chat-bubble bot">
+              Hello! I am your <strong>CivicAI Municipal Concierge</strong>. I can answer inquiries regarding public works, verify triage policies, or search current reports stored in system memory. Try asking:
+              <div class="suggested-queries">
+                <button class="btn-suggestion" onclick="askQuestion('How do I report a pothole?')">How do I report a pothole?</button>
+                <button class="btn-suggestion" onclick="askQuestion('Which department handles garbage?')">Which department handles garbage?</button>
+                <button class="btn-suggestion" onclick="askQuestion('Which issues are high priority?')">Which issues are high priority?</button>
+                <button class="btn-suggestion" onclick="askQuestion('How many complaints are pending?')">How many complaints are pending?</button>
+              </div>
+            </div>
+          </div>
+
+          <form class="chat-input-row" onsubmit="handleChatSubmit(event)">
+            <input type="text" id="chat-input" class="form-control" placeholder="Ask about civic issues, departments, or current reports..." required>
+            <button type="submit" class="btn btn-primary">
+              <i data-lucide="send"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- VIEW 7: Demo Settings -->
+      <div id="view-settings" class="view-panel">
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="card-title">Hackathon Demonstration Utilities</h2>
+            <span class="badge badge-subtle">VORTEX 2K26</span>
+          </div>
+          <p class="text-sm text-dim mb-4">
+            Manage application state, reset records back to initial benchmark fixtures, or toggle demo environment parameters.
+          </p>
+
+          <div class="settings-actions">
+            <button class="btn btn-outline" onclick="confirmResetData()">
+              <i data-lucide="refresh-cw"></i>
+              <span>Reset Sample Data to Default (12 Fixtures)</span>
+            </button>
+            <button class="btn btn-outline" onclick="injectDemoBurstIssue()">
+              <i data-lucide="zap"></i>
+              <span>Simulate Influx: Trigger Critical Water Main Burst</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title mb-2">Presentation Checklist</h3>
+          <ul class="checklist">
+            <li><i data-lucide="check" class="text-green"></i> Local AI keyword triage demonstration</li>
+            <li><i data-lucide="check" class="text-green"></i> Citizen to Administrator role transitions</li>
+            <li><i data-lucide="check" class="text-green"></i> Interactive Leaflet map with priority pins</li>
+            <li><i data-lucide="check" class="text-green"></i> Dynamic Chart.js dashboard & department analytics</li>
+            <li><i data-lucide="check" class="text-green"></i> Full CRUD status updates with complete audit trail</li>
+          </ul>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ================= COMPLAINT DETAILS / ADMIN TRIAGE MODAL ================= -->
+  <div id="complaint-modal" class="modal-backdrop" style="display:none;" onclick="handleModalBackdropClick(event)">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <span class="badge badge-subtle" id="modal-tracking-id">TKT-0000</span>
+          <h2 class="modal-title" id="modal-title">Complaint Inspection</h2>
+        </div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="grid-2 mb-3">
+          <div>
+            <div class="meta-label">Location Address</div>
+            <div class="meta-value" id="modal-location">--</div>
+          </div>
+          <div>
+            <div class="meta-label">Reported Timestamp</div>
+            <div class="meta-value" id="modal-timestamp">--</div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="meta-label">Incident Description</div>
+          <p class="meta-desc" id="modal-desc">--</p>
+        </div>
+
+        <!-- Evidence Photo Preview -->
+        <div id="modal-image-wrapper" class="mb-3" style="display:none;">
+          <div class="meta-label">Visual Photographic Evidence</div>
+          <img id="modal-image" src="" alt="Incident evidence photo" class="modal-image-preview">
+        </div>
+
+        <!-- AI Diagnostic Box -->
+        <div class="ai-box mb-4">
+          <div class="flex-align gap-2 mb-1">
+            <i data-lucide="sparkles" class="text-blue" style="width:16px;height:16px;"></i>
+            <span class="text-xs uppercase tracking-wider font-semibold text-blue">CivicAI Heuristics Analysis</span>
+          </div>
+          <div class="grid-3 mb-2">
+            <div>
+              <span class="text-xs text-dim">Detected Category:</span>
+              <div class="font-bold text-sm" id="modal-ai-cat">--</div>
+            </div>
+            <div>
+              <span class="text-xs text-dim">Calculated Priority:</span>
+              <div id="modal-ai-pri">--</div>
+            </div>
+            <div>
+              <span class="text-xs text-dim">Responsible Dept:</span>
+              <div class="font-bold text-sm" id="modal-ai-dept">--</div>
+            </div>
+          </div>
+          <p class="text-xs text-dim" id="modal-ai-reasoning">--</p>
+        </div>
+
+        <!-- Admin Status Modifier -->
+        <div class="admin-action-box" id="modal-admin-actions">
+          <div class="flex-between mb-2">
+            <span class="font-bold text-sm">Status Management</span>
+            <span class="badge badge-ai" id="admin-notice">Admin Privileges Active</span>
+          </div>
+          <div class="flex-align gap-2">
+            <select id="modal-status-select" class="form-control">
+              <option value="Submitted">Submitted</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Assigned">Assigned</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+            <button class="btn btn-primary" onclick="updateComplaintStatus()">Apply Status</button>
+          </div>
+        </div>
+
+        <!-- Activity Timeline -->
+        <div class="mt-4">
+          <h4 class="font-bold text-sm mb-2">Audit & Lifecycle Timeline</h4>
+          <div class="timeline" id="modal-timeline">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Custom Scripts -->
+  <script src="script.js"></script>
+</body>
+</html>
